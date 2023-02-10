@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Mysql docker configuration
+  mysql:
+    environment:
+      - MYSQL_DATABASE=user_blog_app
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+    command:
+      - --table_definition_cache=100
+      - --performance_schema=0
+      - --default-authentication-plugin=mysql_native_password
+      - --innodb_use_native_aio=0
+    ports:
+      - 3306:3306
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    container_name: user_blog_app_mysql
+    image: mysql
+  # Nest js app docker config for development
+  dev:
+    container_name: user_blog_app_micro_dev
+    image: user_blog_app_micro_dev:1.0.0
+    build:
+      context: .
+      target: development
+      dockerfile: ./Dockerfile
+    command: npm run start:debug
+    ports:
+      - 3000:3000
+      - 9229:9229
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+  # Nest js app docker config for production
+  prod:
+      container_name: user_blog_app_micro_prod
+      image: user_blog_app_micro_dev:1.0.0
+      build:
+          context: .
+          target: production
+          dockerfile: ./Dockerfile
+      command: npm run start:prod
+      ports:
+          - 3000:3000
+          - 9229:9229
+      volumes:
+          - .:/usr/src/app
+          - /usr/src/app/node_modules
+      restart: unless-stopped
